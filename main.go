@@ -162,9 +162,9 @@ func main() {
 		update:=bson.D{
 			{Key : "$set",
 				Value: bson.D{
-					{Key : "name", Value : employee.name},
-					{Key : "age", Value : employee.age},
-					{Key : "salary", Value :employee.Salary}
+					{Key : "name", Value : employee.Name},
+					{Key : "age", Value : employee.Age},
+					{Key : "salary", Value :employee.Salary},
 				},
 
 			},
@@ -181,13 +181,13 @@ func main() {
 			return c.SendStatus(500)
 		}
 
-		employee.Id = idParam
+		employee.ID = idParam
 		return c.Status(200).JSON(employee)
 	} )
 
 
 
-	app.Delete("/employee/:id", func(c *fiber.Ctx){
+	app.Delete("/employee/:id", func(c *fiber.Ctx) error{
 		idParams := c.Params("id")
 		employeeId ,err := primitive.ObjectIDFromHex(idParams)
 
@@ -210,4 +210,6 @@ func main() {
 
 		return c.Status(200).JSON("record deleted")
 	})
+
+	log.Fatal(app.Listen(":3000"))//start the server
 }
