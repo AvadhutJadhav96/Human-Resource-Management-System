@@ -2,13 +2,19 @@ package main
 
 import (
 	"log"
+	"context"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type MongoInstance struct {
-	Client
-	Db
+	Client	*mongo.Client
+	Db		*mongo.Database
 }
 
 var mg MongoInstance
@@ -24,7 +30,32 @@ type Employee struct {
 }
 
 func Connect() error {
- 
+	// Create a context with a timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// Connect to MongoDB directly using mongo.Connect()
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoURI))
+	if err != nil {
+		return err
+	}
+
+	// Verify the connection
+	err = client.Ping(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	// Assign database instance
+	db := client.Database(dbName)
+
+	// Store MongoDB instance globally
+	mg = MongoInstance{
+		Client: client,
+		Db:     db,
+	}
+
+	return nil
 }
 
 func main() {
