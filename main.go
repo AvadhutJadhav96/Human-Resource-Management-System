@@ -7,6 +7,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -134,7 +135,57 @@ func main() {
 		//returned to frontend back in JSON format
 	})
 
-	
-	app.Put("/employee/:id")
+
+	app.Put("/employee/:id",func (c *fiber.Ctx) error{
+
+		idParam := c.Params("id")
+		//this is how we get the id where we want to update
+
+		employeeID,err := primitive.ObjectIDFromHex(idParam)
+		//converting it to hex format
+
+		if err!=nil{
+			return c.SendStatus(400)
+		}
+
+		var employee Employee
+
+		if err:= c.BodyParser(employee); err!=nil{
+			return c.Status(400).SendString(err.Error())
+		}
+		//Body parser gets you the content that is to be updated in go struct format
+
+		//below is the way to update things in mongo db
+		
+		query := bson.D{{Key :"_id",Value : employeeID}}
+
+		update:=bson.D{
+			{Key : "$set",
+				Value: bson.D{
+					{Key : "name", Value : employee.name},
+					{Key : "age", Value : employee.age},
+					{Key : "salary", Value :employee.Salary}
+				},
+
+			},
+		}
+
+		//run the query as follows
+		err = mg.Db.Collection("employees").FindOneAndUpdate(c.Context(),query,update).Err()
+
+		if err!=nil{
+			if err== mongo.ErrNoDocuments{
+				return c.SendStatus(400)
+			}
+
+			return c.SendStatus(500)
+		}
+
+		employee.Id = idParam
+		return c.Status(200).JSON(employee)
+	} )
+
+
+
 	app.Delete("/employee/:id")
 }
